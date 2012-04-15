@@ -33,6 +33,7 @@ import org.apache.coyote.OutputBuffer;
 import org.apache.coyote.Request;
 import org.apache.coyote.RequestInfo;
 import org.apache.coyote.Response;
+import org.apache.coyote.http11.upgrade.UpgradeInbound;
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.ByteChunk;
@@ -456,6 +457,9 @@ public abstract class AbstractAjpProcessor<S> extends AbstractProcessor<S> {
             ((AtomicBoolean) param).set(asyncStateMachine.isAsync());
         } else if (actionCode == ActionCode.ASYNC_IS_TIMINGOUT) {
             ((AtomicBoolean) param).set(asyncStateMachine.isAsyncTimingOut());
+        } else if (actionCode == ActionCode.UPGRADE) {
+            // HTTP connections only. Unsupported for AJP.
+            // NOOP
         }  else {
             actionInternal(actionCode, param);
         }
@@ -504,11 +508,36 @@ public abstract class AbstractAjpProcessor<S> extends AbstractProcessor<S> {
 
 
     @Override
+    public void setSslSupport(SSLSupport sslSupport) {
+        // Should never reach this code but in case we do...
+        throw new IllegalStateException(
+                sm.getString("ajpprocessor.ssl.notsupported"));
+    }
+
+
+    @Override
     public SocketState event(SocketStatus status) throws IOException {
         // Should never reach this code but in case we do...
         throw new IOException(
                 sm.getString("ajpprocessor.comet.notsupported"));
     }
+
+
+    @Override
+    public SocketState upgradeDispatch() throws IOException {
+        // Should never reach this code but in case we do...
+        throw new IOException(
+                sm.getString("ajpprocessor.httpupgrade.notsupported"));
+    }
+
+
+    @Override
+    public UpgradeInbound getUpgradeInbound() {
+        // Should never reach this code but in case we do...
+        throw new IllegalStateException(
+                sm.getString("ajpprocessor.httpupgrade.notsupported"));
+    }
+
 
     /**
      * Recycle the processor, ready for the next request which may be on the
@@ -518,6 +547,7 @@ public abstract class AbstractAjpProcessor<S> extends AbstractProcessor<S> {
      *                      allowing the processor to perform any additional
      *                      clean-up that may be required
      */
+    @Override
     public void recycle(boolean socketClosing) {
         asyncStateMachine.recycle();
 
@@ -548,8 +578,15 @@ public abstract class AbstractAjpProcessor<S> extends AbstractProcessor<S> {
 
 
     @Override
-    protected final boolean isComet() {
+    public final boolean isComet() {
         // AJP does not support Comet
+        return false;
+    }
+
+
+    @Override
+    public final boolean isUpgrade() {
+        // AJP does not support HTTP upgrade
         return false;
     }
 

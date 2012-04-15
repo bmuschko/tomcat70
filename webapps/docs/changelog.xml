@@ -53,7 +53,58 @@
   They eventually become mixed with the numbered issues. (I.e., numbered
   issues to not "pop up" wrt. others).
 -->
-<section name="Tomcat 7.0.27 (markt)">
+<section name="Tomcat 7.0.28 (markt)">
+  <subsection name="Catalina">
+    <changelog>
+      <fix>
+        <bug>53021</bug>: Correct WebSocket protocol version detection. (pero)
+      </fix>
+      <add>
+        Add new attributes of <code>allow</code> and <code>deny</code> to
+        UserConfig. (kfujino)
+      </add>
+      <fix>
+        Remove potential bottleneck on creation of new WebSocket connections.
+        (markt)
+      </fix>
+      <fix>
+        <bug>53056</bug>: Add APR version number to tcnative version INFO log
+        message. (schultz)
+      </fix>
+      <fix>
+        <bug>53057</bug>: Add OpenSSL version number INFO log message when
+        initializing. (schultz)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Cluster">
+    <changelog>
+      <fix>
+        Avoid NPE when reload if a state of a BackupManager is FAILED. (kfujino)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="Other">
+    <changelog>
+      <update>
+        Update to Eclipse JDT Compiler 3.7.2 at maven tomcat-jasper.pom. (pero)
+      </update>
+      <fix>
+        Add missing dependencies in pom files. (markt)
+      </fix>
+    </changelog>
+  </subsection>
+  <subsection name="jdbc-pool">
+    <changelog>
+      <fix>
+        <bug>50864</bug> (<rev>1311844</rev>):
+        JMX enable most pool properties (fhanik)
+      </fix>  
+    </changelog>
+  </subsection>
+  
+</section>
+<section name="Tomcat 7.0.27 (markt)" rtext="released 2012-04-05">
   <subsection name="Catalina">
     <changelog>
       <update>
@@ -66,6 +117,14 @@
         Further improve fix for <bug>51197</bug> to allow an error reporting
         Valve to write a response body if <code>sendError()</code> is called
         during an asynchronous request on a container thread. (markt)
+      </fix>
+      <fix>
+        Correct fix for <bug>51741</bug> (<rev>1307600</rev>):
+        If <code>VirtualDirContext</code> class is configured with non-empty
+        value of <code>extraResourcePaths</code> option (a feature added
+        in 7.0.24), do not implicitly set <code>allowLinking</code> option to
+        the value of <code>true</code>. If it is really needed, it should be
+        set explicitly. (kkolinko)
       </fix>
       <fix>
         <bug>52500</bug>: Added configurable mechanism to retrieve user names
@@ -91,14 +150,64 @@
         <code>java.lang.String</code>. (markt)
       </fix>
       <fix>
+        <bug>52833</bug>: Handle the case where the parent class loader for the
+        Catalina object does not have the system class loader in its hierarchy.
+        This may happen when embedding. Patch provided by olamy. (markt)
+      </fix>
+      <add>
+        <bug>52839</bug>: Add a unit test for DigestAuthenticator and
+        SingleSignOn. Patch provide by Brian Burch. (markt)
+      </add>
+      <fix>
         <bug>52846</bug>: Make sure NonLoginAuthenticator registers not 
         MemoryUser but GenericPrincipal into a session when UserDatabaseRealm 
         is used. (kfujino)
       </fix>
       <add>
         <bug>52850</bug>: Extend memory leak prevention and detection code to
-        work with IBM as well as Oracle JVMs. Patch provided by Rohit Kelapure.
-        (markt)
+        work with IBM as well as Oracle JVMs. Extend unit tests to check direct
+        and indirect ThreadLocal memory leak detection. Based on a patch
+        provided by Rohit Kelapure. (markt)
+      </add>
+      <add>
+        Add support for the WebSocket protocol (RFC6455). Both streaming and
+        message based APIs are provided and the implementation currently fully
+        passes the Autobahn test suite. Also included are several examples.
+        A significant contribution to this new functionality was provided by
+        Johno Crawford &#x2014; particularly the examples. Contributions were
+        also provided by Petr Praus, Jonathan Drake &amp; Slávka. (markt)
+      </add>
+      <fix>
+        When stopping a Context, ensure that any Servlets registered with JMX
+        are unregistered. (markt)
+      </fix>
+      <scode>
+        Make the implementation of <code>Catalina.getParentClassLoader</code>
+        consistent with similar methods across the code base and have it return
+        the system class loader if no parent class loader is set. (markt)
+      </scode>
+      <fix>
+        <bug>52953</bug>: Ensure users can authenticate when using DIGEST
+        authentication with digested passwords if the digested password is
+        stored using upper case hexadecimal characters since DIGEST
+        authentication expects digests to use lower case characters. Based on a
+        patch provided by Neale Rudd. (markt)
+      </fix>
+      <fix>
+        <bug>52957</bug>: Ensure that a Valve implements Lifecycle before
+        calling any Lifecycle methods on that Valve. (markt)
+      </fix>
+      <fix>
+        <bug>52958</bug>: Fix MBean descriptors for
+        <code>org.apache.catalina.realm</code> package. (markt)
+      </fix>
+      <fix>
+        <bug>52974</bug>: Fix <code>NameNotFoundException</code> when
+        field/method is annotated with <code>@Resource</code> annotation. Patch
+        provided by Violet Agg. (markt)
+      </fix>
+      <add>
+        Add support for multi-thread deployment in UserConfig. (kfujino)
       </add>
     </changelog>
   </subsection>
@@ -113,6 +222,30 @@
         <bug>52770</bug>: Fix a bug in the highly unlikely circumstance that
         an infinite timeout was specified for writing data to a client when
         using NIO. (markt)
+      </fix>
+      <fix>
+        <bug>52858</bug>: Fix high CPU load with SSL, NIO and sendfile when
+        client breaks the connection before reading all the requested data.
+        (markt)
+      </fix>
+      <fix>
+        <bug>52926</bug>: Avoid NPE when an NIO Comet connection times out on
+        one thread at the same time as it is closed on another thread. (markt)  
+      </fix>
+      <add>
+        Include port number when known in connector name when loggin messages
+        from connectors that use automatic free port allocation. (markt)
+      </add>
+      <fix>
+        Don't try an unlock the acceptor thread if it is not locked. This is
+        unlikely to impact normal usage but it does fix some unit test issues.
+        (markt)
+      </fix>
+      <fix>
+        When using the APR connector ensure that any connections in a keep-alive
+        state are closed when the connector is stopped rather than when the
+        connector is destroyed. This is important when stop() followed by
+        start() is called on the connector. (markt) 
       </fix>
     </changelog>
   </subsection>
@@ -134,6 +267,24 @@
       <fix>
         <bug>52776</bug>: Refactor the code so JspFragment.invoke cleans up
         after itself. Patch provided by Karl von Randow. (markt)
+      </fix>
+      <fix>
+        <bug>52970</bug>: Take account of coercion rules when invoking methods
+        via EL. (markt)
+      </fix>
+      <fix>
+        <bug>52998</bug>: Partial fix. Remove static references to the EL
+        expression factory and use per web application references instead.
+        (markt)
+      </fix>
+      <fix>
+        <bug>52998</bug>: Remainder of fix. Cache the class to use for the EL
+        expression factory per class loader. (kkolinko)
+      </fix>
+      <fix>
+        <bug>53001</bug>: Revert the fix for <bug>46915</bug> since the use case
+        described in the bug is invalid since it breaks the EL specification.
+        (markt)
       </fix>
     </changelog>
   </subsection>
@@ -162,10 +313,42 @@
   </subsection>
   <subsection name="jdbc-pool">
     <changelog>
+      <update>
+        Pool cleaner thread should be created using the classloader
+        that loaded the pool, not the context loader (fhanik)
+      </update>
       <fix>
         <bug>52804</bug>: Make pool properties serializable and cloneable.
         (fhanik)
       </fix>
+      <fix>
+        <bug>51237</bug> (<rev>1302902</rev>):
+        Slow Query Report should log using WARN level when queries are slow
+        and within the threshold of caching it. (fhanik)
+      </fix>
+      <fix>
+        <bug>52002</bug> (<rev>1302948</rev>):
+        Add in configuration option to disallow connection reuse. 
+        (<rev>1305862</rev>):
+        useDisposableConnectionFacade is by default enabled (fhanik)
+      </fix>
+      <fix>
+        <bug>52493</bug> (<rev>1302969</rev>):
+        Java 7 DataSource method addition. (fhanik)
+      </fix>
+      <fix>
+        <bug>51893</bug> (<rev>1302990</rev>):
+        Throw an error and notification when pool is exhausted. (fhanik)
+      </fix>
+      <fix>
+        <bug>50860</bug> (<rev>1303031</rev>):
+        Add in option to configure logging for validation errors. (fhanik)
+      </fix>
+      <fix>
+        <bug>52066</bug> (<rev>1305931</rev>):
+        Add in configuration option, progagateInterruptState, to allow threads to 
+        retain the interrupt state. (fhanik)
+      </fix>  
     </changelog>
   </subsection>
   <subsection name="Other">

@@ -36,6 +36,7 @@ import org.apache.coyote.http11.filters.IdentityOutputFilter;
 import org.apache.coyote.http11.filters.SavedRequestInputFilter;
 import org.apache.coyote.http11.filters.VoidInputFilter;
 import org.apache.coyote.http11.filters.VoidOutputFilter;
+import org.apache.coyote.http11.upgrade.UpgradeInbound;
 import org.apache.juli.logging.Log;
 import org.apache.tomcat.util.ExceptionUtils;
 import org.apache.tomcat.util.buf.Ascii;
@@ -251,6 +252,13 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
      * Allow a customized the server header for the tin-foil hat folks.
      */
     protected String server = null;
+
+
+    /**
+     * Listener to which data available events are passed once the associated
+     * connection has completed the HTTP upgrade process.
+     */
+    protected UpgradeInbound upgradeInbound = null;
 
 
     public AbstractHttp11Processor(AbstractEndpoint endpoint) {
@@ -830,6 +838,10 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
             ((AtomicBoolean) param).set(asyncStateMachine.isAsync());
         } else if (actionCode == ActionCode.ASYNC_IS_TIMINGOUT) {
             ((AtomicBoolean) param).set(asyncStateMachine.isAsyncTimingOut());
+        } else if (actionCode == ActionCode.UPGRADE) {
+            upgradeInbound = (UpgradeInbound) param;
+            // Stop further HTTP output
+            getOutputBuffer().finished = true;
         } else {
             actionInternal(actionCode, param);
         }
@@ -905,7 +917,7 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
         }
 
         while (!error && keepAlive && !comet && !isAsync() &&
-                !endpoint.isPaused()) {
+                upgradeInbound == null && !endpoint.isPaused()) {
 
             // Parsing the request header
             try {
@@ -1053,6 +1065,8 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
             return SocketState.CLOSED;
         } else if (isAsync() || comet) {
             return SocketState.LONG;
+        } else if (isUpgrade()) {
+            return SocketState.UPGRADING;
         } else {
             if (sendfileInProgress) {
                 return SocketState.SENDFILE;
@@ -1258,18 +1272,21 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
 
         // Advertise sendfile support through a request attribute
         if (endpoint.getUseSendfile()) {
-            request.setAttribute("org.apache.tomcat.sendfile.support",
+            request.setAttribute(
+                    org.apache.coyote.Constants.SENDFILE_SUPPORTED_ATTR,
                     Boolean.TRUE);
         }
 
         // Advertise comet support through a request attribute
         if (endpoint.getUseComet()) {
-            request.setAttribute("org.apache.tomcat.comet.support",
+            request.setAttribute(
+                    org.apache.coyote.Constants.COMET_SUPPORTED_ATTR,
                     Boolean.TRUE);
         }
         // Advertise comet timeout support
         if (endpoint.getUseCometTimeout()) {
-            request.setAttribute("org.apache.tomcat.comet.timeout.support",
+            request.setAttribute(
+                    org.apache.coyote.Constants.COMET_TIMEOUT_SUPPORTED_ATTR,
                     Boolean.TRUE);
         }
 
@@ -1552,6 +1569,28 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
     }
 
 
+    @Override
+    public boolean isUpgrade() {
+        return upgradeInbound != null;
+    }
+
+
+
+    @Override
+    public SocketState upgradeDispatch() throws IOException {
+        // Should never reach this code but in case we do...
+        // TODO
+        throw new IOException(
+                sm.getString("TODO"));
+    }
+
+
+    @Override
+    public UpgradeInbound getUpgradeInbound() {
+        return upgradeInbound;
+    }
+
+
     /**
      * Provides a mechanism for those connector implementations (currently only
      * NIO) that need to reset timeouts from Async timeouts to standard HTTP
@@ -1605,10 +1644,19 @@ public abstract class AbstractHttp11Processor<S> extends AbstractProcessor<S> {
             SocketWrapper<S> socketWrapper);
 
 
-    public final void recycle() {
-        getInputBuffer().recycle();
-        getOutputBuffer().recycle();
-        asyncStateMachine.recycle();
+
+    @Override
+    public final void recycle(boolean isSocketClosing) {
+        if (getInputBuffer() != null) {
+            getInputBuffer().recycle();
+        }
+        if (getOutputBuffer() != null) {
+            getOutputBuffer().recycle();
+        }
+        if (asyncStateMachine != null) {
+            asyncStateMachine.recycle();
+        }
+        upgradeInbound = null;
         remoteAddr = null;
         remoteHost = null;
         localAddr = null;

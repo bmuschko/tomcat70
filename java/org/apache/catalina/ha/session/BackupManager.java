@@ -20,10 +20,12 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
+import org.apache.catalina.Cluster;
 import org.apache.catalina.DistributedManager;
 import org.apache.catalina.LifecycleException;
 import org.apache.catalina.LifecycleState;
 import org.apache.catalina.Session;
+import org.apache.catalina.ha.CatalinaCluster;
 import org.apache.catalina.ha.ClusterManager;
 import org.apache.catalina.ha.ClusterMessage;
 import org.apache.catalina.tribes.Channel;
@@ -31,6 +33,7 @@ import org.apache.catalina.tribes.tipis.AbstractReplicatedMap.MapOwner;
 import org.apache.catalina.tribes.tipis.LazyReplicatedMap;
 import org.apache.juli.logging.Log;
 import org.apache.juli.logging.LogFactory;
+import org.apache.tomcat.util.res.StringManager;
 
 /**
  *@author Filip Hanik
@@ -40,6 +43,11 @@ public class BackupManager extends ClusterManagerBase
         implements MapOwner, DistributedManager {
 
     private static final Log log = LogFactory.getLog(BackupManager.class);
+
+    /**
+     * The string manager for this package.
+     */
+    protected static final StringManager sm = StringManager.getManager(Constants.Package);
 
     protected static long DEFAULT_REPL_TIMEOUT = 15000;//15 seconds
 
@@ -142,6 +150,15 @@ public class BackupManager extends ClusterManagerBase
         super.startInternal();
 
         try {
+            if (getCluster() == null) {
+                Cluster cluster = getContainer().getCluster();
+                if (cluster instanceof CatalinaCluster) {
+                    setCluster((CatalinaCluster)cluster);
+                } else {
+                    throw new LifecycleException(
+                            sm.getString("backupManager.noCluster", getName()));
+                }
+            }
             cluster.registerManager(this);
             LazyReplicatedMap map = new LazyReplicatedMap(this,
                                                           cluster.getChannel(),
@@ -151,8 +168,8 @@ public class BackupManager extends ClusterManagerBase
             map.setChannelSendOptions(mapSendOptions);
             this.sessions = map;
         }  catch ( Exception x ) {
-            log.error("Unable to start BackupManager",x);
-            throw new LifecycleException("Failed to start BackupManager",x);
+            log.error(sm.getString("backupManager.startUnable", getName()),x);
+            throw new LifecycleException(sm.getString("backupManager.startFailed", getName()),x);
         }
         setState(LifecycleState.STARTING);
     }
@@ -178,7 +195,7 @@ public class BackupManager extends ClusterManagerBase
     protected synchronized void stopInternal() throws LifecycleException {
 
         if (log.isDebugEnabled())
-            log.debug("Stopping");
+            log.debug(sm.getString("backupManager.stopped", getName()));
 
         setState(LifecycleState.STOPPING);
 

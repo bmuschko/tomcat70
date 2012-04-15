@@ -166,6 +166,107 @@ public final class Globals {
 
 
     /**
+     * All request attributes which names start with this prefix are used by
+     * connector implementations. They are passed down to coyoteRequest and back
+     * up. See <code>Request.setAttribute(String, Object)</code>.
+     * @deprecated Unused. Will be removed in Tomcat 8.0.x.
+     */
+    @Deprecated
+    public static final String TOMCAT_CONNECTOR_ATTR_PREFIX =
+        "org.apache.tomcat.";
+
+
+    /**
+     * The request attribute that is set to the value of {@code Boolean.TRUE}
+     * if connector processing this request supports Comet API.
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String COMET_SUPPORTED_ATTR =
+        org.apache.coyote.Constants.COMET_SUPPORTED_ATTR;
+
+
+    /**
+     * The request attribute that is set to the value of {@code Boolean.TRUE}
+     * if connector processing this request supports setting
+     * per-connection request timeout through Comet API.
+     *
+     * @see org.apache.catalina.comet.CometEvent#setTimeout(int)
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String COMET_TIMEOUT_SUPPORTED_ATTR =
+            org.apache.coyote.Constants.COMET_TIMEOUT_SUPPORTED_ATTR;
+
+
+    /**
+     * The request attribute that can be set to a value of type
+     * {@code java.lang.Integer} to specify per-connection request
+     * timeout for Comet API. The value is in milliseconds.
+     *
+     * @see org.apache.catalina.comet.CometEvent#setTimeout(int)
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String COMET_TIMEOUT_ATTR =
+        org.apache.coyote.Constants.COMET_TIMEOUT_ATTR;
+
+
+    /**
+     * The request attribute that is set to the value of {@code Boolean.TRUE}
+     * if connector processing this request supports use of sendfile.
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String SENDFILE_SUPPORTED_ATTR =
+            org.apache.coyote.Constants.SENDFILE_SUPPORTED_ATTR;
+
+
+    /**
+     * The request attribute that can be used by a servlet to pass
+     * to the connector the name of the file that is to be served
+     * by sendfile. The value should be {@code java.lang.String}
+     * that is {@code File.getCanonicalPath()} of the file to be served.
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String SENDFILE_FILENAME_ATTR =
+            org.apache.coyote.Constants.SENDFILE_FILENAME_ATTR;
+
+
+    /**
+     * The request attribute that can be used by a servlet to pass
+     * to the connector the start offset of the part of a file
+     * that is to be served by sendfile. The value should be
+     * {@code java.lang.Long}. To serve complete file
+     * the value should be {@code Long.valueOf(0)}.
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String SENDFILE_FILE_START_ATTR =
+            org.apache.coyote.Constants.SENDFILE_FILE_START_ATTR;
+
+
+    /**
+     * The request attribute that can be used by a servlet to pass
+     * to the connector the end offset (not including) of the part
+     * of a file that is to be served by sendfile. The value should be
+     * {@code java.lang.Long}. To serve complete file
+     * the value should be equal to the length of the file.
+     *
+     * Duplicated here for neater code in the catalina packages.
+     */
+    public static final String SENDFILE_FILE_END_ATTR =
+            org.apache.coyote.Constants.SENDFILE_FILE_END_ATTR;
+
+
+    /**
+     *
+     */
+    public static final String ASYNC_SUPPORTED_ATTR =
+        "org.apache.catalina.ASYNC_SUPPORTED";
+
+
+    /**
      * The request attribute that is set to {@code Boolean.TRUE} if some request
      * parameters have been ignored during request parameters parsing. It can
      * happen, for example, if there is a limit on the total count of parseable
@@ -189,12 +290,6 @@ public final class Globals {
      */
     public static final boolean IS_SECURITY_ENABLED =
         (System.getSecurityManager() != null);
-
-    /**
-     *
-     */
-    public static final String ASYNC_SUPPORTED_ATTR =
-        "org.apache.catalina.ASYNC_SUPPORTED";
 
 
     /**

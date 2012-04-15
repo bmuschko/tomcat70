@@ -55,7 +55,7 @@ public abstract class AbstractEndpoint {
         public enum SocketState {
             // TODO Add a new state to the AsyncStateMachine and remove
             //      ASYNC_END (if possible)
-            OPEN, CLOSED, LONG, ASYNC_END, SENDFILE
+            OPEN, CLOSED, LONG, ASYNC_END, SENDFILE, UPGRADING, UPGRADED
         }
 
 
@@ -470,6 +470,18 @@ public abstract class AbstractEndpoint {
      * Unlock the server socket accept using a bogus connection.
      */
     protected void unlockAccept() {
+        // Only try to unlock the acceptor if it is necessary
+        boolean unlockRequired = false;
+        for (Acceptor acceptor : acceptors) {
+            if (acceptor.getState() == AcceptorState.RUNNING) {
+                unlockRequired = true;
+                break;
+            }
+        }
+        if (!unlockRequired) {
+            return;
+        }
+
         java.net.Socket s = null;
         InetSocketAddress saddr = null;
         try {
@@ -678,7 +690,7 @@ public abstract class AbstractEndpoint {
      * example, this can happen with the Acceptor thread if the ulimit for open
      * files is reached.
      *
-     * @param currentErrorDelay The current delay beign applied on failure
+     * @param currentErrorDelay The current delay being applied on failure
      * @return  The delay to apply on the next failure
      */
     protected int handleExceptionWithDelay(int currentErrorDelay) {
