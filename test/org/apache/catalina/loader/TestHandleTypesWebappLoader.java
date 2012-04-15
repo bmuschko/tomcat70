@@ -11,12 +11,30 @@ public class TestHandleTypesWebappLoader extends TomcatBaseTest {
     public static final String TEST_DIR = "test/webapp-3.0-spring";
 
     @Test
-    public void testStartInternal() throws Exception {
+    public void testStartInternalForLibrary() throws Exception {
         Tomcat tomcat = getTomcatInstance();
         StandardContext context = (StandardContext)tomcat.addWebapp(null, "/spring", TEST_DIR + "/src/main/webapp");
         context.setLoader(new WebappLoader());
         context.setUnpackWAR(false);
-        context.getLoader().addRepository(new File(TEST_DIR, "/src/main/java").toURI().toURL().toString());
+        context.getLoader().addRepository(new File(TEST_DIR, "/target/lib/app.jar").toURI().toURL().toString());
+
+        File folder = new File(TEST_DIR, "/lib");
+        File[] libs = folder.listFiles();
+
+        for(File lib : libs) {
+            context.getLoader().addRepository(lib.toURI().toURL().toString());
+        }
+
+        tomcat.start();
+    }
+
+    @Test
+    public void testStartInternalForClassesDirectory() throws Exception {
+        Tomcat tomcat = getTomcatInstance();
+        StandardContext context = (StandardContext)tomcat.addWebapp(null, "/spring", TEST_DIR + "/src/main/webapp");
+        context.setLoader(new WebappLoader());
+        context.setUnpackWAR(false);
+        context.getLoader().addRepository(new File(TEST_DIR, "/target/classes/main").toURI().toURL().toString());
         context.getLoader().addRepository(new File(TEST_DIR, "/src/main/resources").toURI().toURL().toString());
 
         File folder = new File(TEST_DIR, "/lib");
